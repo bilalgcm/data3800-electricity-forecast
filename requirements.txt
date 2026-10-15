@@ -1,0 +1,9 @@
+numpy
+pandas
+matplotlib
+scikit-learn
+requests
+python-dotenv
+entsoe-py
+holidays
+jupyter
