@@ -8,7 +8,7 @@ DATA3800 Introduction to Data Science with Scripting, OsloMet, autumn 2026. Grou
 
 | Source | What we use | Access |
 | --- | --- | --- |
-| [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/) | Actual total load for bidding zone NO1 | Free security token (register, then email transparency@entsoe.eu to request API access) |
+| [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/) | Actual total load and the official day-ahead load forecast for bidding zone NO1 (the forecast is used only as a benchmark) | Free security token (register, then email transparency@entsoe.eu to request API access) |
 | [Frost API, met.no](https://frost.met.no/) | Hourly air temperature, Oslo Blindern (SN18700) | Free client ID |
 
 ## Pipeline

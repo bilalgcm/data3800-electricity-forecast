@@ -42,6 +42,11 @@ def main():
     # Baseline: same hour last week.
     results.append(score("Baseline (same hour last week)", test[TARGET], test["load_lag_168h"]))
 
+    # Benchmark: ENTSO-E's official day-ahead forecast. Not used as a feature,
+    # only as a reference for how good a professional forecast is.
+    if "forecast_mw" in test:
+        results.append(score("ENTSO-E day-ahead forecast", test[TARGET], test["forecast_mw"]))
+
     # Linear regression. Hour, weekday and month are one-hot encoded so the model
     # does not treat them as ordered numbers.
     X_train = pd.get_dummies(train[FEATURES], columns=["hour", "weekday", "month"])
