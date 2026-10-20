@@ -40,7 +40,7 @@ def add_features(df):
     df["is_holiday"] = [int(d in no_holidays) for d in local.date]
 
     # Lagged consumption: what we would know when forecasting the next day.
-    df["load_lag_24h"] = df["load_mw"].shift(24)
+    df["load_lag_48h"] = df["load_mw"].shift(48)
     df["load_lag_168h"] = df["load_mw"].shift(168)   # same hour last week
     return df
 

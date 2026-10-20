@@ -13,7 +13,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error
 import config
 
 FEATURES = ["temp_c", "hour", "weekday", "month", "is_weekend", "is_holiday",
-            "load_lag_24h", "load_lag_168h"]
+            "load_lag_48h", "load_lag_168h"]
 TARGET = "load_mw"
 
 
