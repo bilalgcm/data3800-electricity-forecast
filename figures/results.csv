@@ -1,0 +1,5 @@
+model,MAE,RMSE
+Baseline (same hour last week),298.7,459.2
+ENTSO-E day-ahead forecast,150.0,213.5
+Linear regression,185.0,242.2
+Random forest,130.4,181.6
