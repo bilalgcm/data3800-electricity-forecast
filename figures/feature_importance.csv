@@ -1,0 +1,9 @@
+,importance
+load_lag_48h,0.7837
+load_lag_168h,0.1066
+temp_c,0.073
+hour,0.0177
+weekday,0.0083
+month,0.0054
+is_weekend,0.0037
+is_holiday,0.0015
