@@ -1,0 +1,8 @@
+,value
+rows,32687.0
+mean_load_mw,3924.64
+min_load_mw,1759.48
+max_load_mw,8165.99
+winter_to_summer_ratio,2.39
+weekday_vs_weekend_pct,8.2
+corr_daily_load_temp,-0.95
