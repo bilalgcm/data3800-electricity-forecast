@@ -20,8 +20,10 @@ Each step is one script in `src/` and reads the previous step's output, so the w
 | 1. Fetch consumption | `src/fetch_consumption.py` | `data/raw/consumption_no1.csv` | Person 1 |
 | 2. Fetch weather | `src/fetch_weather.py` | `data/raw/temperature_blindern.csv` | Person 2 |
 | 3. Clean and merge | `src/build_dataset.py` | `data/processed/dataset.csv` | Person 2 |
-| 4. Exploratory analysis | `notebooks/01_eda.ipynb` | `figures/` | Person 3 |
-| 5. Models and evaluation | `src/models.py` | results table + figures | Person 4 |
+| 4. Exploratory analysis | `src/eda.py` | `figures/eda_*.png`, `figures/eda_summary.csv` | Person 3 |
+| 5. Models and evaluation | `src/models.py` | `figures/results.csv`, `figures/model_*.png`, `data/processed/predictions_test.csv` | Person 4 |
+
+`src/plot_style.py` holds the shared figure style, so every plot in the report uses the same colours and fonts.
 
 ## Setup
 
@@ -40,8 +42,42 @@ cp .env.example .env             # then fill in your own keys
 python src/fetch_consumption.py
 python src/fetch_weather.py
 python src/build_dataset.py
+python src/eda.py
 python src/models.py
 ```
+
+The full run takes a few minutes, most of it fetching data from the APIs.
+
+## Results
+
+Test period: January to September 2026. The models are trained on 2023 to 2025 only.
+
+| Model | MAE (MW) | RMSE (MW) |
+| --- | ---: | ---: |
+| Baseline: same hour last week | 298.7 | 459.2 |
+| ENTSO-E official day-ahead forecast | 150.0 | 213.5 |
+| Linear regression | 185.0 | 242.2 |
+| **Random forest** | **130.4** | **181.6** |
+
+The random forest more than halves the baseline error and beats the linear model, which cannot capture the non-linear link between temperature and load.
+
+### Figures
+
+| Figure | What it shows |
+| --- | --- |
+| `eda_load_over_time.png` | Daily load 2023 to 2026, with the test period marked |
+| `eda_load_by_hour.png` | Average daily profile, weekdays vs weekends |
+| `eda_load_by_weekday.png` | Average load per day of week |
+| `eda_load_by_month.png` | Seasonal pattern, average load per month |
+| `eda_load_vs_temperature.png` | Daily load against daily temperature, with correlation |
+| `model_forecast_vs_actual_week.png` | One test week: actual load, our random forest and ENTSO-E |
+| `model_feature_importance.png` | Which features the random forest relies on |
+
+## Limitations
+
+- **Temperature is measured, not forecast.** We use the actual temperature at Blindern, which acts like a perfect weather forecast. A real day-ahead forecast would use a temperature forecast, so our errors are somewhat optimistic. This is the main reason the comparison with ENTSO-E is not fully fair.
+- **One weather station.** Blindern represents all of NO1, which covers a much larger area than Oslo.
+- **Feature importance is impurity-based.** It can overstate features that are correlated with each other (for example temperature and month), so we read it as a ranking, not exact shares.
 
 ## Rules for the group
 
