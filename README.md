@@ -50,6 +50,17 @@ python src/experiments.py
 
 The full run takes a few minutes, most of it fetching data from the APIs.
 
+## Forecasting agent
+
+`agent/` contains an LLM agent that answers questions about NO1 consumption and makes real day-ahead forecasts with our model. It calls two Python tools (`agent/tools.py`): `get_forecast` (our random forest + met.no's temperature forecast + recent load from ENTSO-E) and `get_actual_load`.
+
+```bash
+python src/train_final_model.py   # trains on all data, saves models/rf_final.joblib
+python agent/chat.py              # needs the AZURE_OPENAI_* keys in .env
+```
+
+Every test question and answer is recorded in `agent/test_log.md`.
+
 ## Results
 
 Test period: January to September 2026. The models are trained on 2023 to 2025 only.

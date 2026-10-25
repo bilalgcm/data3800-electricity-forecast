@@ -7,3 +7,5 @@ python-dotenv
 entsoe-py
 holidays
 jupyter
+openai
+joblib
