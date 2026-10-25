@@ -22,6 +22,7 @@ Each step is one script in `src/` and reads the previous step's output, so the w
 | 3. Clean and merge | `src/build_dataset.py` | `data/processed/dataset.csv` | Person 2 |
 | 4. Exploratory analysis | `src/eda.py` | `figures/eda_*.png`, `figures/eda_summary.csv` | Person 3 |
 | 5. Models and evaluation | `src/models.py` | `figures/results.csv`, `figures/model_*.png`, `data/processed/predictions_test.csv` | Person 4 |
+| 6. Experiments (ablation test, weekend fix) | `src/experiments.py` | `figures/ablation.*`, `figures/weekend_fix.*` | Person 4 |
 
 `src/plot_style.py` holds the shared figure style, so every plot in the report uses the same colours and fonts.
 
@@ -44,6 +45,7 @@ python src/fetch_weather.py
 python src/build_dataset.py
 python src/eda.py
 python src/models.py
+python src/experiments.py
 ```
 
 The full run takes a few minutes, most of it fetching data from the APIs.
