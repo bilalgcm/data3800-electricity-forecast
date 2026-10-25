@@ -42,6 +42,22 @@ def add_features(df):
     # Lagged consumption: what we would know when forecasting the next day.
     df["load_lag_48h"] = df["load_mw"].shift(48)
     df["load_lag_168h"] = df["load_mw"].shift(168)   # same hour last week
+    return add_daytype_features(df)
+
+
+def add_daytype_features(df):
+    """Fix for the weekend error: the 48 h lag on a Monday is Saturday's load,
+    and on a Sunday it is Friday's. When the lag comes from a different kind of
+    day (workday vs weekend/holiday), use the same hour last week instead.
+
+    day_type:            0 = workday, 1 = weekend or holiday
+    lag48_same_daytype:  1 if the 48 h lag comes from the same day type
+    load_lag_daytype:    48 h lag if same day type, else the 168 h lag
+    """
+    df["day_type"] = ((df["is_weekend"] == 1) | (df["is_holiday"] == 1)).astype(int)
+    same = df["day_type"].shift(48) == df["day_type"]
+    df["lag48_same_daytype"] = same.astype(int)
+    df["load_lag_daytype"] = df["load_lag_48h"].where(same, df["load_lag_168h"])
     return df
 
 
