@@ -1,0 +1,8 @@
+experiment,features,MAE,MAE_change_vs_all
+All features,"temp_c, hour, weekday, month, is_weekend, is_holiday, load_lag_48h, load_lag_168h",130.4,0.0
+Without temperature,"hour, weekday, month, is_weekend, is_holiday, load_lag_48h, load_lag_168h",219.1,88.7
+Without calendar,"temp_c, load_lag_48h, load_lag_168h",199.8,69.4
+Without lagged load,"temp_c, hour, weekday, month, is_weekend, is_holiday",199.1,68.7
+Lagged load only,"load_lag_48h, load_lag_168h",266.9,136.5
+Temperature only,temp_c,491.5,361.2
+Calendar only,"hour, weekday, month, is_weekend, is_holiday",338.2,207.9

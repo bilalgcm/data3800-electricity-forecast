@@ -1,0 +1,7 @@
+group,hours,MAE_before,MAE_after,change_pct
+All hours,6550,130.4,141.7,8.7
+Monday,888,130.5,147.3,12.9
+Tue to Fri,3624,119.8,129.2,7.9
+Weekend,1799,138.0,154.5,11.9
+Holiday,239,232.9,212.8,-8.6
+48 h lag from other day type,3741,135.6,154.4,13.9
