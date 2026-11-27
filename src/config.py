@@ -15,7 +15,11 @@ FIGURES = ROOT / "figures"
 START = "2023-01-01"
 END = "2026-10-01"
 
-# Last part of the period is held out as the test set.
+# Time-based split (week 45: train / validation / test).
+#   train:      START      to VAL_START   the models learn from this
+#   validation: VAL_START  to TEST_START  used to choose between models and settings
+#   test:       TEST_START to END         touched once, for the final numbers
+VAL_START = "2025-01-01"
 TEST_START = "2026-01-01"
 
 TZ = "Europe/Oslo"

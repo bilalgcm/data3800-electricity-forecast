@@ -1,0 +1,7 @@
+fastapi==0.165.0
+uvicorn==0.54.0
+scikit-learn==1.9.1
+pandas==3.0.6
+joblib==1.6.0
+holidays==0.106
+python-dotenv==1.2.4

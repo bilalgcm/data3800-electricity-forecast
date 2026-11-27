@@ -1,24 +1,29 @@
-"""Step 6: experiments for the final report.
+"""Step 7: experiments for the final report.
 
 1. Ablation test: how much do temperature, calendar effects and lagged load
    each contribute? Retrain the random forest on different feature groups
    and compare the error on the test period.
 2. Weekend fix: does replacing the 48 h lag with a day-type-aware lag reduce
    the errors on Mondays, Tuesdays and weekends?
+3. Temperature forecast error: our models are tested with MEASURED temperature,
+   which a real day-ahead forecast does not have. How much worse does the
+   random forest get when the temperature it is given is wrong by 1, 2 or 3
+   degrees?
 
 Input:  data/processed/dataset.csv (run build_dataset.py first)
 Output: figures/ablation.csv, figures/ablation.png,
-        figures/weekend_fix.csv, figures/weekend_fix.png
+        figures/weekend_fix.csv, figures/weekend_fix.png,
+        figures/temperature_error.csv, figures/temperature_error.png
 """
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
-from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error
 
 import config
 import plot_style as ps
 from build_dataset import add_daytype_features
-from models import TARGET, split
+from models import TARGET, make_forest, saved_forest_setting, split
 
 TEMPERATURE = ["temp_c"]
 CALENDAR = ["hour", "weekday", "month", "is_weekend", "is_holiday"]
@@ -42,7 +47,7 @@ FIXED = TEMPERATURE + CALENDAR + ["load_lag_daytype", "load_lag_168h", "lag48_sa
 
 def fit_predict(train, test, features):
     """Same random forest settings as models.py, so results are comparable."""
-    rf = RandomForestRegressor(n_estimators=200, min_samples_leaf=5, n_jobs=-1, random_state=42)
+    rf = make_forest(saved_forest_setting())
     rf.fit(train[features], train[TARGET])
     return rf.predict(test[features])
 
@@ -134,6 +139,60 @@ def plot_weekend_fix(table):
     ps.save(fig, "weekend_fix")
 
 
+TEMP_ERROR_SD = [0, 1, 2, 3]   # degrees C
+TEMP_ERROR_REPEATS = 10
+
+
+def run_temperature_error(train, test):
+    """Give the trained forest a wrong temperature and measure the damage.
+
+    We have no archive of old weather forecasts, so we simulate one. A weather
+    forecast is usually wrong in the same direction for a whole day, so each
+    day gets one random offset (normal, standard deviation = sd) and each hour
+    a smaller one on top (sd / 2). The model itself is not retrained.
+    """
+    rf = make_forest(saved_forest_setting()).fit(train[ALL], train[TARGET])
+    days = pd.Series(test.index.tz_convert(config.TZ).date, index=test.index)
+    unique_days = days.unique()
+
+    rows = []
+    for sd in TEMP_ERROR_SD:
+        maes = []
+        for seed in range(1 if sd == 0 else TEMP_ERROR_REPEATS):
+            rng = np.random.default_rng(seed)
+            day_offset = pd.Series(rng.normal(0, sd, len(unique_days)), index=unique_days)
+            noisy = test[ALL].copy()
+            noisy["temp_c"] = (test["temp_c"] + days.map(day_offset).to_numpy()
+                               + rng.normal(0, sd / 2, len(test)))
+            maes.append(mean_absolute_error(test[TARGET], rf.predict(noisy)))
+        rows.append({"temperature_error_sd_c": sd, "MAE": np.mean(maes),
+                     "MAE_min": np.min(maes), "MAE_max": np.max(maes)})
+    table = pd.DataFrame(rows)
+    table["MAE_change_pct"] = (table.MAE / table.MAE.iloc[0] - 1) * 100
+    table = table.round(1)
+    table.to_csv(config.FIGURES / "temperature_error.csv", index=False)
+    return table
+
+
+def plot_temperature_error(table, entsoe_mae):
+    fig, ax = plt.subplots(figsize=(7.5, 4.3))
+    x = range(len(table))
+    ax.bar(x, table.MAE, color=ps.BLUE, width=0.6)
+    for i, v in enumerate(table.MAE):
+        ax.text(i, v + 3, f"{v:.0f}", ha="center", color=ps.TEXT, fontsize=9)
+    if entsoe_mae is not None:
+        ax.axhline(entsoe_mae, color=ps.ORANGE, linestyle="--", linewidth=1.5)
+        ax.text(-0.45, entsoe_mae + 4, f"ENTSO-E day-ahead forecast: {entsoe_mae:.0f}",
+                color=ps.ORANGE, ha="left", va="bottom", fontsize=9)
+    labels = ["Measured\ntemperature"] + [f"Error ±{sd} °C" for sd in table.temperature_error_sd_c[1:]]
+    ax.set_xticks(list(x), labels)
+    ax.set_title("Random forest error when the temperature is a forecast")
+    ax.set_ylabel("MAE on test period (MW)")
+    ax.grid(axis="x", visible=False)
+    ax.set_ylim(0, max(table.MAE.max(), entsoe_mae or 0) * 1.15)
+    ps.save(fig, "temperature_error")
+
+
 def main():
     df = pd.read_csv(config.PROCESSED / "dataset.csv", index_col="time_utc", parse_dates=True)
     if "load_lag_daytype" not in df:
@@ -153,6 +212,11 @@ def main():
     fix = run_weekend_fix(train, test)
     plot_weekend_fix(fix)
     print(fix.to_string(index=False))
+
+    print("\nTemperature forecast error:")
+    temp = run_temperature_error(train, test)
+    plot_temperature_error(temp, entsoe_mae)
+    print(temp.to_string(index=False))
 
 
 if __name__ == "__main__":

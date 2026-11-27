@@ -2,18 +2,57 @@
 
 Owner: Person 2
 Input:  data/raw/consumption_no1.csv, data/raw/temperature_blindern.csv
-Output: data/processed/dataset.csv
+Output: data/processed/dataset.csv, figures/data_quality.csv
 """
-import holidays
 import pandas as pd
 
 import config
+from features import calendar_features
 
 
 def load_raw():
     load = pd.read_csv(config.RAW / "consumption_no1.csv", index_col="time_utc", parse_dates=True)
     temp = pd.read_csv(config.RAW / "temperature_blindern.csv", index_col="time_utc", parse_dates=True)
     return load, temp
+
+
+def quality_report(load, temp):
+    """Check the raw files against things we already know the answer to.
+
+    An hourly series has exactly one row per hour, so the number of rows, the
+    number of duplicates and the hours per year can all be checked without
+    looking at a single value.
+    """
+    rows = []
+    for name, df, column, low, high in [("consumption_no1.csv", load, "load_mw", 0, 15000),
+                                        ("temperature_blindern.csv", temp, "temp_c", -40, 40)]:
+        expected = pd.date_range(df.index.min(), df.index.max(), freq="1h")
+        values = df[column]
+        gaps = values.reindex(expected).isna()
+        longest_gap = gaps.groupby((~gaps).cumsum()).sum().max()
+        rows.append({
+            "file": name,
+            "first_hour_utc": f"{df.index.min():%Y-%m-%d %H:%M}",
+            "last_hour_utc": f"{df.index.max():%Y-%m-%d %H:%M}",
+            "rows": len(df),
+            "expected_hours": len(expected),
+            "duplicate_timestamps": int(df.index.duplicated().sum()),
+            "missing_hours": int(gaps.sum()),
+            "longest_gap_hours": int(longest_gap),
+            "values_outside_range": int(((values <= low) | (values > high)).sum()),
+            "min": round(float(values.min()), 1),
+            "max": round(float(values.max()), 1),
+        })
+    report = pd.DataFrame(rows).set_index("file").T
+    print("Data quality check on the raw files:\n", report.to_string())
+
+    local_year = load.index.tz_convert(config.TZ).year
+    per_year = load["load_mw"].groupby(local_year).count()
+    print("Hours with load per year (a full year has 8760, a leap year 8784):\n", per_year.to_string())
+
+    config.FIGURES.mkdir(parents=True, exist_ok=True)
+    report.to_csv(config.FIGURES / "data_quality.csv")
+    return report
 
 
 def clean(df):
@@ -30,14 +69,7 @@ def clean(df):
 
 
 def add_features(df):
-    local = df.index.tz_convert(config.TZ)
-    no_holidays = holidays.Norway(years=range(local.year.min(), local.year.max() + 1))
-
-    df["hour"] = local.hour
-    df["weekday"] = local.dayofweek          # 0 = Monday
-    df["month"] = local.month
-    df["is_weekend"] = (df["weekday"] >= 5).astype(int)
-    df["is_holiday"] = [int(d in no_holidays) for d in local.date]
+    df = df.join(calendar_features(df.index))
 
     # Lagged consumption: what we would know when forecasting the next day.
     df["load_lag_48h"] = df["load_mw"].shift(48)
@@ -63,6 +95,7 @@ def add_daytype_features(df):
 
 def main():
     load, temp = load_raw()
+    quality_report(load, temp)
     df = load.join(temp, how="outer")
     df = clean(df)
     df = add_features(df)
