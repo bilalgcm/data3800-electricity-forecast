@@ -1,0 +1,11 @@
+,consumption_no1.csv,temperature_blindern.csv
+first_hour_utc,2022-12-31 23:00,2023-01-01 00:00
+last_hour_utc,2026-09-30 21:00,2026-09-30 23:00
+rows,32855,32856
+expected_hours,32855,32856
+duplicate_timestamps,0,0
+missing_hours,0,0
+longest_gap_hours,0,0
+values_outside_range,0,0
+min,1759.5,-22.5
+max,8166.0,32.4

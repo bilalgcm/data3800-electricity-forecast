@@ -1,0 +1,7 @@
+,value
+mean_error_mw,-29.4
+median_abs_error_mw,93.6
+p95_abs_error_mw,376.0
+max_abs_error_mw,1088.9
+share_within_100_mw_pct,52.7
+share_over_300_mw_pct,9.3

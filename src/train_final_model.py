@@ -9,17 +9,16 @@ Output: models/rf_final.joblib (not committed, rerun this script to recreate)
 """
 import joblib
 import pandas as pd
-from sklearn.ensemble import RandomForestRegressor
 
 import config
-from models import FEATURES, TARGET
+from models import FEATURES, TARGET, make_forest, saved_forest_setting
 
 MODEL_PATH = config.ROOT / "models" / "rf_final.joblib"
 
 
 def main():
     df = pd.read_csv(config.PROCESSED / "dataset.csv", index_col="time_utc", parse_dates=True)
-    rf = RandomForestRegressor(n_estimators=200, min_samples_leaf=5, n_jobs=-1, random_state=42)
+    rf = make_forest(saved_forest_setting())
     rf.fit(df[FEATURES], df[TARGET])
 
     MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)

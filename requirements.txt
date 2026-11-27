@@ -1,11 +1,16 @@
-numpy
-pandas
-matplotlib
-scikit-learn
-requests
-python-dotenv
-entsoe-py
-holidays
-jupyter
-openai
-joblib
+# Versions the results were produced with (Python 3.14).
+numpy==2.5.4
+pandas==3.0.6
+matplotlib==3.11.2
+seaborn==0.13.2
+scikit-learn==1.9.1
+joblib==1.6.0
+holidays==0.106
+requests==2.34.2
+python-dotenv==1.2.4
+entsoe-py==0.8.1
+openai==3.37.0
+jupyter==1.1.1
+fastapi==0.165.0
+uvicorn==0.54.0
+httpx==0.28.1

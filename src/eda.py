@@ -1,13 +1,14 @@
 """Step 4: exploratory data analysis.
 
 Input:  data/processed/dataset.csv
-Output: figures/eda_*.png and figures/eda_summary.csv
+Output: figures/eda_*.png, figures/eda_summary.csv, figures/eda_correlation.csv
 
 Hour, weekday and month in the dataset are already in local time (Europe/Oslo),
 so the patterns below are what people in Oslo actually experience.
 """
 import matplotlib.pyplot as plt
 import pandas as pd
+import seaborn as sns
 
 import config
 import plot_style as ps
@@ -88,6 +89,85 @@ def plot_vs_temperature(df):
     return corr
 
 
+def plot_distribution(df):
+    """Shape of the target: histogram with mean and median (week 43)."""
+    load = df["load_mw"]
+    fig, ax = plt.subplots()
+    ax.hist(load, bins=60, color=ps.BLUE)
+    ax.axvline(load.median(), color=ps.ACTUAL, linestyle="--", linewidth=1.5,
+               label=f"Median {load.median():,.0f} MW")
+    ax.axvline(load.mean(), color=ps.ORANGE, linewidth=1.5, label=f"Mean {load.mean():,.0f} MW")
+    ax.set_title("Distribution of hourly load")
+    ax.set_xlabel("Load (MW)")
+    ax.set_ylabel("Hours")
+    ax.legend()
+    ps.save(fig, "eda_load_distribution")
+
+
+def plot_box_by_hour(df):
+    """One box per hour: centre and spread through the day."""
+    groups = [g["load_mw"].to_numpy() for _, g in df.groupby("hour")]
+    fig, ax = plt.subplots()
+    ax.boxplot(groups, positions=range(24), widths=0.6, patch_artist=True,
+               boxprops={"facecolor": "#cfe0f5", "edgecolor": ps.BLUE},
+               medianprops={"color": ps.ACTUAL, "linewidth": 1.5},
+               whiskerprops={"color": ps.BLUE}, capprops={"color": ps.BLUE},
+               flierprops={"marker": ".", "markersize": 2, "markerfacecolor": ps.TEXT,
+                           "markeredgecolor": "none", "alpha": 0.3})
+    ax.set_xticks(range(0, 24, 2), range(0, 24, 2))
+    ax.set_title("Load by hour of day: centre and spread")
+    ax.set_xlabel("Hour (local time)")
+    ax.set_ylabel("Load (MW)")
+    ax.grid(axis="x", visible=False)
+    ps.save(fig, "eda_load_box_by_hour")
+
+
+def plot_hour_weekday_heatmap(df):
+    """Hour across, day of week down, colour for the average load."""
+    table = df.pivot_table(index="weekday", columns="hour", values="load_mw", aggfunc="mean")
+    table.index = WEEKDAYS
+    fig, ax = plt.subplots(figsize=(10, 3.6))
+    sns.heatmap(table, cmap="Blues", ax=ax, cbar_kws={"label": "Average load (MW)"})
+    ax.set_title("Average load by hour and day of week")
+    ax.set_xlabel("Hour (local time)")
+    ax.set_ylabel("")
+    ax.grid(False)
+    ps.save(fig, "eda_load_hour_weekday")
+
+
+def plot_temperature_hourly(df):
+    """Hourly load against temperature. The relationship is a curve, not a line."""
+    sample = df.sample(6000, random_state=0)   # a random sample keeps the plot readable
+    fig, ax = plt.subplots(figsize=(7, 5))
+    ax.scatter(sample["temp_c"], sample["load_mw"], s=6, color=ps.BLUE, alpha=0.25, linewidths=0)
+    binned = df.groupby(df["temp_c"].round())["load_mw"].mean()
+    binned = binned[df.groupby(df["temp_c"].round()).size() >= 30]
+    ax.plot(binned.index, binned.values, color=ps.ORANGE, label="Average per degree")
+    ax.set_title("Hourly load against temperature")
+    ax.set_xlabel("Temperature at Blindern (°C)")
+    ax.set_ylabel("Load (MW)")
+    ax.legend()
+    ax.text(0.98, 0.72, f"Random sample of {len(sample):,}\nof {len(df):,} hours",
+            transform=ax.transAxes, ha="right", color=ps.TEXT, fontsize=9)
+    ps.save(fig, "eda_load_vs_temperature_hourly")
+
+
+def plot_correlation(df):
+    """Correlation matrix for the target and the numeric features."""
+    labels = {"load_mw": "Load", "temp_c": "Temperature", "load_lag_48h": "Load 48 h earlier",
+              "load_lag_168h": "Load 1 week earlier", "hour": "Hour", "weekday": "Day of week",
+              "month": "Month", "is_weekend": "Weekend", "is_holiday": "Holiday"}
+    corr = df[list(labels)].rename(columns=labels).corr()
+    fig, ax = plt.subplots(figsize=(7.5, 6))
+    sns.heatmap(corr, cmap="coolwarm", vmin=-1, vmax=1, annot=True, fmt=".2f", square=True,
+                annot_kws={"fontsize": 8}, cbar_kws={"shrink": 0.8}, ax=ax)
+    ax.set_title("Correlation between load and the features")
+    ax.grid(False)
+    ps.save(fig, "eda_correlation")
+    corr.round(3).to_csv(config.FIGURES / "eda_correlation.csv")
+    return corr
+
+
 def main():
     df = load_dataset()
     print(f"Loaded {len(df)} hourly rows from {df.index.min():%Y-%m-%d} to {df.index.max():%Y-%m-%d}")
@@ -104,6 +184,12 @@ def main():
 
     corr = plot_vs_temperature(df)
 
+    plot_distribution(df)
+    plot_box_by_hour(df)
+    plot_hour_weekday_heatmap(df)
+    plot_temperature_hourly(df)
+    matrix = plot_correlation(df)
+
     # Numbers we will quote in the report.
     summary = pd.Series({
         "rows": len(df),
@@ -114,6 +200,11 @@ def main():
         "weekday_vs_weekend_pct": (df.loc[df.is_weekend == 0, "load_mw"].mean()
                                    / df.loc[df.is_weekend == 1, "load_mw"].mean() - 1) * 100,
         "corr_daily_load_temp": corr,
+        "corr_hourly_load_temp": matrix.loc["Load", "Temperature"],
+        "corr_hourly_load_lag_48h": matrix.loc["Load", "Load 48 h earlier"],
+        "corr_hourly_load_lag_168h": matrix.loc["Load", "Load 1 week earlier"],
+        "corr_hourly_load_hour": matrix.loc["Load", "Hour"],
+        "median_load_mw": df["load_mw"].median(),
     }).round(2)
     print(summary.to_string())
     summary.to_csv(config.FIGURES / "eda_summary.csv", header=["value"])

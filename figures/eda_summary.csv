@@ -6,3 +6,8 @@ max_load_mw,8165.99
 winter_to_summer_ratio,2.39
 weekday_vs_weekend_pct,8.2
 corr_daily_load_temp,-0.95
+corr_hourly_load_temp,-0.86
+corr_hourly_load_lag_48h,0.94
+corr_hourly_load_lag_168h,0.92
+corr_hourly_load_hour,0.15
+median_load_mw,3604.04

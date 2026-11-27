@@ -1,0 +1,8 @@
+model,accuracy,precision,recall,F1,TP,FP,FN,TN
+Never warns (lazy model),0.827,,0.0,0.0,0,0,1134,5416
+Baseline (same hour last week),0.925,0.774,0.8,0.787,907,265,227,5151
+ENTSO-E day-ahead forecast,0.981,0.911,0.985,0.947,1117,109,17,5307
+Linear regression,0.974,0.952,0.897,0.924,1017,51,117,5365
+Decision tree,0.969,0.948,0.869,0.907,985,54,149,5362
+k nearest neighbours,0.975,0.947,0.906,0.926,1027,58,107,5358
+Random forest,0.984,0.951,0.958,0.954,1086,56,48,5360

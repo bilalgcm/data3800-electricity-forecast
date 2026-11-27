@@ -12,13 +12,13 @@ import sys
 from datetime import date as Date
 from pathlib import Path
 
-import holidays
 import joblib
 import pandas as pd
 import requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 import config  # noqa: E402
+from features import calendar_features  # noqa: E402
 
 MODEL_PATH = config.ROOT / "models" / "rf_final.joblib"
 TEST_MAE_MW = 130.4  # random forest MAE on the 2026 test period (figures/results.csv)
@@ -111,18 +111,12 @@ def get_forecast(date):
     temp = fetch_temperature_forecast()
 
     bundle = _load_model()
-    local = hours.tz_convert(config.TZ)
-    no_holidays = holidays.Norway(years=day.year)
-    X = pd.DataFrame({
-        "temp_c": temp.reindex(hours).to_numpy(),
-        "hour": local.hour,
-        "weekday": local.dayofweek,
-        "month": local.month,
-        "is_weekend": (local.dayofweek >= 5).astype(int),
-        "is_holiday": int(day in no_holidays),
-        "load_lag_48h": load.reindex(hours - pd.Timedelta(hours=48)).to_numpy(),
-        "load_lag_168h": load.reindex(hours - pd.Timedelta(hours=168)).to_numpy(),
-    }, index=hours)[bundle["features"]]
+    # Same calendar features as in training (src/features.py).
+    X = calendar_features(hours)
+    X["temp_c"] = temp.reindex(hours).to_numpy()
+    X["load_lag_48h"] = load.reindex(hours - pd.Timedelta(hours=48)).to_numpy()
+    X["load_lag_168h"] = load.reindex(hours - pd.Timedelta(hours=168)).to_numpy()
+    X = X[bundle["features"]]
 
     ok = X.notna().all(axis=1)
     preds = pd.Series(float("nan"), index=hours)

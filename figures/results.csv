@@ -1,5 +1,7 @@
-model,MAE,RMSE
-Baseline (same hour last week),298.7,459.2
-ENTSO-E day-ahead forecast,150.0,213.5
-Linear regression,185.0,242.2
-Random forest,130.4,181.6
+model,MAE_validation,MAE,RMSE,R2
+Baseline (same hour last week),364.0,298.7,459.2,0.903
+ENTSO-E day-ahead forecast,103.8,150.0,213.5,0.979
+Linear regression,189.3,185.0,242.2,0.973
+Decision tree (max depth 10),218.2,172.4,243.0,0.973
+k nearest neighbours (k = 35),202.4,183.2,263.6,0.968
+Random forest,167.4,130.4,181.6,0.985
